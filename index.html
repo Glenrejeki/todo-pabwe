@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Todo List</title>
+
+  <!-- Bootstrap CSS -->
+  <link rel="stylesheet" href="node_modules/bootstrap/dist/css/bootstrap.min.css">
+  <!-- Bootstrap Icons -->
+  <link rel="stylesheet" href="node_modules/bootstrap-icons/font/bootstrap-icons.css">
+</head>
+<body>
+  <div class="container mt-5">
+    <h1 class="mb-3">Todo List</h1>
+
+    <!-- Form input Todo -->
+    <form id="formData" class="mb-3">
+      <div class="input-group">
+        <input type="text" class="form-control" name="todo" placeholder="Tambah todo baru..." />
+        <button type="submit" class="btn btn-primary">
+          <i class="bi bi-plus"></i> Tambah
+        </button>
+      </div>
+    </form>
+
+    <!-- Filter dan Search -->
+    <div class="d-flex justify-content-between mb-3">
+      <div>
+        <!-- Tombol filter -->
+        <button class="btn btn-sm btn-outline-secondary me-1 filter-btn active" data-filter="all">Semua</button>
+        <button class="btn btn-sm btn-outline-secondary me-1 filter-btn" data-filter="active">Belum Selesai</button>
+        <button class="btn btn-sm btn-outline-secondary filter-btn" data-filter="completed">Selesai</button>
+      </div>
+      <div>
+        <!-- Input search -->
+        <input type="text" id="searchInput" class="form-control form-control-sm" placeholder="Cari todo...">
+      </div>
+    </div>
+
+    <!-- Daftar Todo -->
+    <ul class="list-group" id="todoList"></ul>
+  </div>
+
+  <!-- Bootstrap JS -->
+  <script src="node_modules/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+
+  <script>
+    // Array penyimpanan Todo
+    let todos = [];
+    // State filter aktif
+    let currentFilter = "all";
+    // State pencarian aktif
+    let currentSearch = "";
+
+    // Fungsi renderTodos() → menggambar ulang daftar
+    function renderTodos() {
+      const todoList = document.getElementById("todoList");
+      todoList.innerHTML = "";
+
+      // Terapkan filter
+      let filteredTodos = todos.filter(item => {
+        if (currentFilter === "active") return !item.completed;
+        if (currentFilter === "completed") return item.completed;
+        return true; // "all"
+      });
+
+      // Terapkan pencarian
+      if (currentSearch.trim() !== "") {
+        filteredTodos = filteredTodos.filter(item =>
+          item.todo.toLowerCase().includes(currentSearch.toLowerCase())
+        );
+      }
+
+      // Buat tampilan tiap todo
+      filteredTodos.forEach((item, index) => {
+        const li = document.createElement("li");
+        li.className = "list-group-item d-flex align-items-center";
+
+        const div = document.createElement("div");
+        div.className = "flex-fill";
+
+        // Checkbox
+        const checkbox = document.createElement("input");
+        checkbox.type = "checkbox";
+        checkbox.className = "form-check-input me-2";
+        checkbox.checked = item.completed;
+        checkbox.addEventListener("change", () => {
+          item.completed = checkbox.checked;
+          renderTodos();
+        });
+
+        // Label teks
+        const label = document.createElement("label");
+        label.textContent = item.todo;
+        label.style.textDecoration = item.completed ? "line-through" : "none";
+
+        div.appendChild(checkbox);
+        div.appendChild(label);
+
+        // Tombol hapus
+        const button = document.createElement("button");
+        button.className = "btn btn-sm btn-outline-danger ms-2";
+        button.innerHTML = '<i class="bi bi-trash"></i>';
+        button.addEventListener("click", () => {
+          todos.splice(index, 1);
+          renderTodos();
+        });
+
+        li.appendChild(div);
+        li.appendChild(button);
+        todoList.appendChild(li);
+      });
+
+      // Simpan otomatis ke localStorage
+      localStorage.setItem("todos", JSON.stringify(todos));
+    }
+
+    document.addEventListener("DOMContentLoaded", function () {
+      const form = document.getElementById("formData");
+      const searchInput = document.getElementById("searchInput");
+
+      // Muat data dari localStorage
+      const storedTodos = localStorage.getItem("todos");
+      if (storedTodos) {
+        todos = JSON.parse(storedTodos);
+      }
+
+      // Event submit form
+      form.addEventListener("submit", function (event) {
+        event.preventDefault();
+        const todoInput = form.todo.value.trim();
+
+        if (todoInput === "") {
+          alert("Todo tidak boleh kosong!");
+          return;
+        }
+
+        // Tambahkan ke array (validasi duplicate nanti di step berikut)
+        todos.unshift({ todo: todoInput, completed: false });
+        form.todo.value = "";
+        renderTodos();
+      });
+
+      // Event filter tombol
+      document.querySelectorAll(".filter-btn").forEach(btn => {
+        btn.addEventListener("click", () => {
+          // Update filter aktif
+          currentFilter = btn.dataset.filter;
+
+          // Update style active
+          document.querySelectorAll(".filter-btn").forEach(b => b.classList.remove("active"));
+          btn.classList.add("active");
+
+          renderTodos();
+        });
+      });
+
+      // Event search
+      searchInput.addEventListener("input", () => {
+        currentSearch = searchInput.value;
+        renderTodos();
+      });
+
+      // Render awal
+      renderTodos();
+    });
+  </script>
+</body>
+</html>
