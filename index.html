@@ -9,6 +9,8 @@
   <link rel="stylesheet" href="node_modules/bootstrap/dist/css/bootstrap.min.css">
   <!-- Bootstrap Icons -->
   <link rel="stylesheet" href="node_modules/bootstrap-icons/font/bootstrap-icons.css">
+  <!-- SortableJS (CDN) -->
+  <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
 </head>
 <body>
   <div class="container mt-5">
@@ -27,13 +29,11 @@
     <!-- Filter dan Search -->
     <div class="d-flex justify-content-between mb-3">
       <div>
-        <!-- Tombol filter -->
         <button class="btn btn-sm btn-outline-secondary me-1 filter-btn active" data-filter="all">Semua</button>
         <button class="btn btn-sm btn-outline-secondary me-1 filter-btn" data-filter="active">Belum Selesai</button>
         <button class="btn btn-sm btn-outline-secondary filter-btn" data-filter="completed">Selesai</button>
       </div>
       <div>
-        <!-- Input search -->
         <input type="text" id="searchInput" class="form-control form-control-sm" placeholder="Cari todo...">
       </div>
     </div>
@@ -46,14 +46,11 @@
   <script src="node_modules/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
 
   <script>
-    // Array penyimpanan Todo
-    let todos = [];
-    // State filter aktif
-    let currentFilter = "all";
-    // State pencarian aktif
-    let currentSearch = "";
+    let todos = [];               // Array penyimpanan
+    let currentFilter = "all";    // State filter aktif
+    let currentSearch = "";       // State pencarian
 
-    // Fungsi renderTodos() → menggambar ulang daftar
+    // Fungsi render todos ke UI
     function renderTodos() {
       const todoList = document.getElementById("todoList");
       todoList.innerHTML = "";
@@ -62,7 +59,7 @@
       let filteredTodos = todos.filter(item => {
         if (currentFilter === "active") return !item.completed;
         if (currentFilter === "completed") return item.completed;
-        return true; // "all"
+        return true;
       });
 
       // Terapkan pencarian
@@ -72,10 +69,11 @@
         );
       }
 
-      // Buat tampilan tiap todo
+      // Render list
       filteredTodos.forEach((item, index) => {
         const li = document.createElement("li");
         li.className = "list-group-item d-flex align-items-center";
+        li.setAttribute("data-id", item.id); // penting untuk drag-drop
 
         const div = document.createElement("div");
         div.className = "flex-fill";
@@ -103,7 +101,7 @@
         button.className = "btn btn-sm btn-outline-danger ms-2";
         button.innerHTML = '<i class="bi bi-trash"></i>';
         button.addEventListener("click", () => {
-          todos.splice(index, 1);
+          todos = todos.filter(t => t.id !== item.id);
           renderTodos();
         });
 
@@ -112,7 +110,7 @@
         todoList.appendChild(li);
       });
 
-      // Simpan otomatis ke localStorage
+      // Simpan ke localStorage
       localStorage.setItem("todos", JSON.stringify(todos));
     }
 
@@ -126,7 +124,7 @@
         todos = JSON.parse(storedTodos);
       }
 
-      // Event submit form
+      // Tambah todo
       form.addEventListener("submit", function (event) {
         event.preventDefault();
         const todoInput = form.todo.value.trim();
@@ -136,27 +134,30 @@
           return;
         }
 
-        // Tambahkan ke array (validasi duplicate nanti di step berikut)
-        todos.unshift({ todo: todoInput, completed: false });
+        // Validasi duplikat (case-insensitive)
+        const exists = todos.some(item => item.todo.toLowerCase() === todoInput.toLowerCase());
+        if (exists) {
+          alert("Todo dengan judul yang sama sudah ada!");
+          return;
+        }
+
+        // Tambahkan dengan ID unik
+        todos.unshift({ id: Date.now(), todo: todoInput, completed: false });
         form.todo.value = "";
         renderTodos();
       });
 
-      // Event filter tombol
+      // Filter button
       document.querySelectorAll(".filter-btn").forEach(btn => {
         btn.addEventListener("click", () => {
-          // Update filter aktif
           currentFilter = btn.dataset.filter;
-
-          // Update style active
           document.querySelectorAll(".filter-btn").forEach(b => b.classList.remove("active"));
           btn.classList.add("active");
-
           renderTodos();
         });
       });
 
-      // Event search
+      // Search input
       searchInput.addEventListener("input", () => {
         currentSearch = searchInput.value;
         renderTodos();
@@ -164,6 +165,23 @@
 
       // Render awal
       renderTodos();
+
+      // Aktifkan SortableJS untuk drag & drop
+      new Sortable(document.getElementById("todoList"), {
+        animation: 150,
+        ghostClass: "bg-light",
+        onEnd: function () {
+          // Ambil urutan baru berdasarkan data-id
+          const newOrder = [];
+          document.querySelectorAll("#todoList li").forEach(li => {
+            const id = parseInt(li.getAttribute("data-id"));
+            const item = todos.find(t => t.id === id);
+            if (item) newOrder.push(item);
+          });
+          todos = newOrder;
+          localStorage.setItem("todos", JSON.stringify(todos));
+        }
+      });
     });
   </script>
 </body>
