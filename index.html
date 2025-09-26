@@ -70,13 +70,13 @@
       }
 
       // Render list
-      filteredTodos.forEach((item, index) => {
+      filteredTodos.forEach((item) => {
         const li = document.createElement("li");
         li.className = "list-group-item d-flex align-items-center";
         li.setAttribute("data-id", item.id); // penting untuk drag-drop
 
         const div = document.createElement("div");
-        div.className = "flex-fill";
+        div.className = "flex-fill d-flex align-items-center";
 
         // Checkbox
         const checkbox = document.createElement("input");
@@ -89,24 +89,60 @@
         });
 
         // Label teks
-        const label = document.createElement("label");
+        const label = document.createElement("span");
         label.textContent = item.todo;
         label.style.textDecoration = item.completed ? "line-through" : "none";
+        label.className = "me-2 flex-grow-1";
 
         div.appendChild(checkbox);
         div.appendChild(label);
 
+        // Tombol edit
+        const editButton = document.createElement("button");
+        editButton.className = "btn btn-sm btn-outline-warning ms-2";
+        editButton.innerHTML = '<i class="bi bi-pencil"></i>';
+        editButton.addEventListener("click", () => {
+          // Ganti label jadi input
+          const input = document.createElement("input");
+          input.type = "text";
+          input.className = "form-control form-control-sm";
+          input.value = item.todo;
+
+          // Ganti tombol edit jadi simpan
+          const saveButton = document.createElement("button");
+          saveButton.className = "btn btn-sm btn-success ms-2";
+          saveButton.innerHTML = '<i class="bi bi-check"></i>';
+
+          // Simpan perubahan
+          saveButton.addEventListener("click", () => {
+            const newValue = input.value.trim();
+            if (newValue === "") {
+              alert("Todo tidak boleh kosong!");
+              return;
+            }
+            item.todo = newValue;
+            renderTodos();
+          });
+
+          // Ganti tampilan div
+          div.innerHTML = "";
+          div.appendChild(checkbox);
+          div.appendChild(input);
+          div.appendChild(saveButton);
+        });
+
         // Tombol hapus
-        const button = document.createElement("button");
-        button.className = "btn btn-sm btn-outline-danger ms-2";
-        button.innerHTML = '<i class="bi bi-trash"></i>';
-        button.addEventListener("click", () => {
+        const deleteButton = document.createElement("button");
+        deleteButton.className = "btn btn-sm btn-outline-danger ms-2";
+        deleteButton.innerHTML = '<i class="bi bi-trash"></i>';
+        deleteButton.addEventListener("click", () => {
           todos = todos.filter(t => t.id !== item.id);
           renderTodos();
         });
 
         li.appendChild(div);
-        li.appendChild(button);
+        li.appendChild(editButton);
+        li.appendChild(deleteButton);
         todoList.appendChild(li);
       });
 
