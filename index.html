@@ -11,74 +11,120 @@
   <link rel="stylesheet" href="node_modules/bootstrap-icons/font/bootstrap-icons.css">
   <!-- SortableJS (CDN) -->
   <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+
+  <style>
+    body {
+      background: #f5f7fa;
+    }
+    .container {
+      max-width: 600px;
+    }
+    h1 {
+      font-weight: bold;
+      text-align: center;
+      color: #0d6efd;
+      margin-bottom: 1.5rem;
+    }
+    .card {
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    }
+    .list-group-item {
+      border: none;
+      margin-bottom: 8px;
+      border-radius: 8px;
+      background: #ffffff;
+      transition: all 0.2s ease;
+    }
+    .list-group-item:hover {
+      transform: translateX(4px);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+    .form-control:focus {
+      box-shadow: none;
+      border-color: #0d6efd;
+    }
+    .btn-outline-warning {
+      border-radius: 6px;
+    }
+    .btn-outline-danger {
+      border-radius: 6px;
+    }
+    .btn-outline-secondary.active {
+      background-color: #0d6efd;
+      color: white;
+      border-color: #0d6efd;
+    }
+    .completed {
+      text-decoration: line-through;
+      color: #6c757d;
+    }
+  </style>
 </head>
 <body>
   <div class="container mt-5">
-    <h1 class="mb-3">Todo List</h1>
+    <div class="card p-4">
+      <h1>Todo List</h1>
 
-    <!-- Form input Todo -->
-    <form id="formData" class="mb-3">
-      <div class="input-group">
-        <input type="text" class="form-control" name="todo" placeholder="Tambah todo baru..." />
-        <button type="submit" class="btn btn-primary">
-          <i class="bi bi-plus"></i> Tambah
-        </button>
-      </div>
-    </form>
+      <!-- Form input Todo -->
+      <form id="formData" class="mb-3">
+        <div class="input-group">
+          <input type="text" class="form-control" name="todo" placeholder="Tambah todo baru..." />
+          <button type="submit" class="btn btn-primary">
+            <i class="bi bi-plus"></i> Tambah
+          </button>
+        </div>
+      </form>
 
-    <!-- Filter dan Search -->
-    <div class="d-flex justify-content-between mb-3">
-      <div>
-        <button class="btn btn-sm btn-outline-secondary me-1 filter-btn active" data-filter="all">Semua</button>
-        <button class="btn btn-sm btn-outline-secondary me-1 filter-btn" data-filter="active">Belum Selesai</button>
-        <button class="btn btn-sm btn-outline-secondary filter-btn" data-filter="completed">Selesai</button>
+      <!-- Filter dan Search -->
+      <div class="d-flex justify-content-between mb-3 flex-wrap gap-2">
+        <div>
+          <button class="btn btn-sm btn-outline-secondary me-1 filter-btn active" data-filter="all">Semua</button>
+          <button class="btn btn-sm btn-outline-secondary me-1 filter-btn" data-filter="active">Belum Selesai</button>
+          <button class="btn btn-sm btn-outline-secondary filter-btn" data-filter="completed">Selesai</button>
+        </div>
+        <div>
+          <input type="text" id="searchInput" class="form-control form-control-sm" placeholder="Cari todo...">
+        </div>
       </div>
-      <div>
-        <input type="text" id="searchInput" class="form-control form-control-sm" placeholder="Cari todo...">
-      </div>
+
+      <!-- Daftar Todo -->
+      <ul class="list-group" id="todoList"></ul>
     </div>
-
-    <!-- Daftar Todo -->
-    <ul class="list-group" id="todoList"></ul>
   </div>
 
   <!-- Bootstrap JS -->
   <script src="node_modules/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
 
   <script>
-    let todos = [];               // Array penyimpanan
-    let currentFilter = "all";    // State filter aktif
-    let currentSearch = "";       // State pencarian
+    let todos = [];               
+    let currentFilter = "all";    
+    let currentSearch = "";       
 
-    // Fungsi render todos ke UI
     function renderTodos() {
       const todoList = document.getElementById("todoList");
       todoList.innerHTML = "";
 
-      // Terapkan filter
       let filteredTodos = todos.filter(item => {
         if (currentFilter === "active") return !item.completed;
         if (currentFilter === "completed") return item.completed;
         return true;
       });
 
-      // Terapkan pencarian
       if (currentSearch.trim() !== "") {
         filteredTodos = filteredTodos.filter(item =>
           item.todo.toLowerCase().includes(currentSearch.toLowerCase())
         );
       }
 
-      // Render list
       filteredTodos.forEach((item) => {
         const li = document.createElement("li");
         li.className = "list-group-item d-flex align-items-center";
-        li.setAttribute("data-id", item.id); // penting untuk drag-drop
+        li.setAttribute("data-id", item.id);
 
         const div = document.createElement("div");
         div.className = "flex-fill d-flex align-items-center";
 
-        // Checkbox
         const checkbox = document.createElement("input");
         checkbox.type = "checkbox";
         checkbox.className = "form-check-input me-2";
@@ -88,32 +134,27 @@
           renderTodos();
         });
 
-        // Label teks
         const label = document.createElement("span");
         label.textContent = item.todo;
-        label.style.textDecoration = item.completed ? "line-through" : "none";
         label.className = "me-2 flex-grow-1";
+        if (item.completed) label.classList.add("completed");
 
         div.appendChild(checkbox);
         div.appendChild(label);
 
-        // Tombol edit
         const editButton = document.createElement("button");
         editButton.className = "btn btn-sm btn-outline-warning ms-2";
         editButton.innerHTML = '<i class="bi bi-pencil"></i>';
         editButton.addEventListener("click", () => {
-          // Ganti label jadi input
           const input = document.createElement("input");
           input.type = "text";
           input.className = "form-control form-control-sm";
           input.value = item.todo;
 
-          // Ganti tombol edit jadi simpan
           const saveButton = document.createElement("button");
           saveButton.className = "btn btn-sm btn-success ms-2";
           saveButton.innerHTML = '<i class="bi bi-check"></i>';
 
-          // Simpan perubahan
           saveButton.addEventListener("click", () => {
             const newValue = input.value.trim();
             if (newValue === "") {
@@ -124,14 +165,12 @@
             renderTodos();
           });
 
-          // Ganti tampilan div
           div.innerHTML = "";
           div.appendChild(checkbox);
           div.appendChild(input);
           div.appendChild(saveButton);
         });
 
-        // Tombol hapus
         const deleteButton = document.createElement("button");
         deleteButton.className = "btn btn-sm btn-outline-danger ms-2";
         deleteButton.innerHTML = '<i class="bi bi-trash"></i>';
@@ -146,7 +185,6 @@
         todoList.appendChild(li);
       });
 
-      // Simpan ke localStorage
       localStorage.setItem("todos", JSON.stringify(todos));
     }
 
@@ -154,13 +192,11 @@
       const form = document.getElementById("formData");
       const searchInput = document.getElementById("searchInput");
 
-      // Muat data dari localStorage
       const storedTodos = localStorage.getItem("todos");
       if (storedTodos) {
         todos = JSON.parse(storedTodos);
       }
 
-      // Tambah todo
       form.addEventListener("submit", function (event) {
         event.preventDefault();
         const todoInput = form.todo.value.trim();
@@ -170,20 +206,17 @@
           return;
         }
 
-        // Validasi duplikat (case-insensitive)
         const exists = todos.some(item => item.todo.toLowerCase() === todoInput.toLowerCase());
         if (exists) {
           alert("Todo dengan judul yang sama sudah ada!");
           return;
         }
 
-        // Tambahkan dengan ID unik
         todos.unshift({ id: Date.now(), todo: todoInput, completed: false });
         form.todo.value = "";
         renderTodos();
       });
 
-      // Filter button
       document.querySelectorAll(".filter-btn").forEach(btn => {
         btn.addEventListener("click", () => {
           currentFilter = btn.dataset.filter;
@@ -193,21 +226,17 @@
         });
       });
 
-      // Search input
       searchInput.addEventListener("input", () => {
         currentSearch = searchInput.value;
         renderTodos();
       });
 
-      // Render awal
       renderTodos();
 
-      // Aktifkan SortableJS untuk drag & drop
       new Sortable(document.getElementById("todoList"), {
         animation: 150,
         ghostClass: "bg-light",
         onEnd: function () {
-          // Ambil urutan baru berdasarkan data-id
           const newOrder = [];
           document.querySelectorAll("#todoList li").forEach(li => {
             const id = parseInt(li.getAttribute("data-id"));
